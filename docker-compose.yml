@@ -1,20 +1,29 @@
 version: '3'
+services:
+  
+  db:
+    image: postgres:12.3
+    volumes:
+      - ./scripts:/scripts
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./dados:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: postgres
+      PGDATA: /tmp
 
-services: 
-     db:
-        image: postgres:12.3
-        volumes:
-            - ./scripts:/scripts
-            - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
-            - ./dados:/var/lib/postgresql/data
-        environment: 
-            POSTGRES_PASSWORD: root
-            POSTGRES_USER: postgres
-            PGDATA: /tmp  
+  frontend:
+    image: nginx:1.18
+    volumes:
+      - ./web:/usr/share/nginx/html
+    ports:
+      - 80:80
 
-     frontend:
-        image: nginx:1.18
-        volumes:
-            - ./web:/usr/share/nginx/html
-        ports: 
-            - 80:80
+  app:
+    image: python
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    command: bash ./app.sh
+    ports: 
+        - 8080:8080
