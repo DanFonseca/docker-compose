@@ -1,6 +1,10 @@
 version: '3'
-services:
-  
+networks: 
+  banco:
+  web:
+  fila:
+
+services:  
   db:
     image: postgres:12.3
     volumes:
@@ -12,18 +16,50 @@ services:
       POSTGRES_USER: postgres
       PGDATA: /tmp
 
+    networks: 
+      - banco
+
   frontend:
     image: nginx:1.18
     volumes:
       - ./web:/usr/share/nginx/html
     ports:
       - 80:80
+    networks: 
+      - web
+    depends_on: 
+      - app
 
   app:
     image: python
     volumes:
       - ./app:/app
+      #proxy reverso
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     working_dir: /app
     command: bash ./app.sh
     ports: 
-        - 8080:8080
+      - 8080:8080
+    networks: 
+     - banco
+     - web
+     - fila 
+    depends_on: 
+      - db
+  
+  worker:
+    image: python
+    volumes:
+      - ./worker:/worker
+    working_dir: /worker
+    command: bash ./app.sh
+    networks: 
+      - fila
+    depends_on: 
+      - queue
+      - app
+      
+  queue:
+    image: 'redis'
+    networks: 
+      - fila
